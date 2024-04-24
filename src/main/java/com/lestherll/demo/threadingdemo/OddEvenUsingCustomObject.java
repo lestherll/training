@@ -1,6 +1,8 @@
 package com.lestherll.demo.threadingdemo;
 
 
+import java.util.function.Function;
+
 /*
 Custom helper range class
  */
@@ -63,18 +65,24 @@ public class OddEvenUsingCustomObject {
 
     public static void main(String[] args) {
         Thread oddThread1 = new Thread(OddEvenUsingCustomObject::printOddNumber);
-//        Thread oddThread2 = new Thread(OddEvenUsingCustomObject::printOddNumber);
         Thread evenThread1 = new Thread(OddEvenUsingCustomObject::printEvenNumber);
 
         evenThread1.start();
         oddThread1.start();
-//        oddThread2.start();
     }
 
     public static void printOddNumber() {
+        printByCustomCondition((x) -> x % 2 != 0);
+    }
+
+    public static void printEvenNumber() {
+        printByCustomCondition((x) -> x % 2 == 0);
+    }
+
+    public static void printByCustomCondition(Function<Integer, Boolean> f) {
         synchronized (sharedObject) {
             while (!sharedObject.hasEnded()) {
-                while (sharedObject.getCurrent() % 2 == 0) {
+                while (f.apply(sharedObject.getCurrent())) {
                     try {
                         sharedObject.wait();
                     } catch (InterruptedException e) {
@@ -88,20 +96,4 @@ public class OddEvenUsingCustomObject {
         }
     }
 
-    public static void printEvenNumber() {
-        synchronized (sharedObject) {
-            while (!sharedObject.hasEnded()) {
-                while (sharedObject.getCurrent() % 2 != 0) {
-                    try {
-                        sharedObject.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                System.out.println(Thread.currentThread().getName() + " " + sharedObject.getCurrent());
-                sharedObject.step();
-                sharedObject.notify();
-            }
-        }
-    }
 }
