@@ -1,6 +1,8 @@
 package com.lestherll.assignments.jdbc;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 
@@ -16,32 +18,23 @@ public class JDBCMain {
         conn.setAutoCommit(false);
 
 
-        try (
-                Statement st = conn.createStatement();
-                ResultSet rs = st.executeQuery("SELECT studentname, studentlastname FROM studentinformation")
-        ) {
-            while (rs.next()) {
-                System.out.println(rs.getString(1) + " " + rs.getString(2));
-            }
-        }
+//        try (
+//                Statement st = conn.createStatement();
+//                ResultSet rs = st.executeQuery("SELECT studentrollno, studentname, studentlastname FROM studentinformation")
+//        ) {
+//            while (rs.next()) {
+//                System.out.println(rs.getString(1) + " " + rs.getString(2));
+//            }
+//        }
 
 
         System.out.println("\n==PREPARED STATEMENTS==");
-        queryName(conn, "rhoda");
+//        queryName(conn, "rhoda");
 
-//        int foovalue = 500;
-//        PreparedStatement prepared = conn.prepareStatement("SELECT * FROM mytable WHERE columnfoo = ?");
-//        st.setInt(1, foovalue);
-//        ResultSet rs = st.executeQuery();
-//        while (rs.next()) {
-//            System.out.print("Column 1 returned ");
-//            System.out.println(rs.getString(1));
-//        }
+
+        getStudents(conn, 10).forEach(System.out::println);
+
         conn.close();
-
-//        String url = "jdbc:postgresql://172.21.0.3:5432/student?user=postgres&password=postgres&ssl=true";
-//        Connection conn = DriverManager.getConnection(url);
-
     }
 
     public static void queryName(Connection conn, String name) {
@@ -62,4 +55,61 @@ public class JDBCMain {
             throw new RuntimeException(e);
         }
     }
+
+    public static List<Student> getStudents(Connection conn) throws SQLException {
+        List<Student> students = new ArrayList<>();
+
+        try (
+                Statement st = conn.createStatement();
+                ResultSet rs = st.executeQuery(
+                                "SELECT studentrollno, studentname, studentlastname, " +
+                                        "studentaddress, studentbirthdate, studentjoined " +
+                                    "FROM studentinformation"
+                        );
+        ) {
+            while (rs.next()) {
+                students.add(
+                        new Student(
+                                rs.getLong("studentrollno"),
+                                rs.getString("studentname"),
+                                rs.getString("studentlastname"),
+                                rs.getString("studentaddress"),
+                                rs.getDate("studentbirthdate"),
+                                rs.getDate("studentjoined")
+                        )
+                );
+            }
+        }
+        return students;
+    }
+
+    public static List<Student> getStudents(Connection conn, long limit) throws SQLException {
+        List<Student> students = new ArrayList<>();
+
+        try (
+                PreparedStatement st = conn.prepareStatement(
+                        "SELECT studentrollno, studentname, studentlastname, " +
+                        "studentaddress, studentbirthdate, studentjoined " +
+                        "FROM studentinformation " +
+                        "LIMIT (?)"
+                );
+        ) {
+            st.setLong(1, limit);
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) {
+                students.add(
+                        new Student(
+                                rs.getLong("studentrollno"),
+                                rs.getString("studentname"),
+                                rs.getString("studentlastname"),
+                                rs.getString("studentaddress"),
+                                rs.getDate("studentbirthdate"),
+                                rs.getDate("studentjoined")
+                        )
+                );
+            }
+        }
+        return students;
+    }
 }
+
